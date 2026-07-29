@@ -11,11 +11,10 @@
     .user { margin-left:auto; background:#e8f0ff; color:#0b66ff; text-align:right; }
     .bot { margin-right:auto; background:#fff; color:#111; text-align:left; box-shadow:0 0 0 1px rgba(0,0,0,0.02); }
     #inputRow { display:flex; gap:0.5rem; margin-top:1rem; }
-    input[type="text"], input[type="password"] { flex:1; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; }
+    input[type="text"] { flex:1; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; }
     button { padding:0.6rem 1rem; border-radius:6px; border:none; background:#0b66ff; color:#fff; cursor:pointer; }
     button:disabled { opacity:0.6; cursor:not-allowed; }
     footer { margin-top:1rem; font-size:0.9rem; color:#666; }
-    .small { font-size:0.9rem; color:#666; }
   </style>
 </head>
 <body>
@@ -23,28 +22,18 @@
   <div id="chat" aria-live="polite"></div>
 
   <div id="inputRow">
-    <input id="message" type="text" placeholder="질문을 입력하세요. 예: '데이터셋은 무엇을 포함하나요?'" />
+    <input id="message" type="text" placeholder="질문을 입력하세요. 예: '데이터셋은 무엇을 포함하나요? '" />
     <button id="send">전송</button>
   </div>
 
-  <div style="margin-top:0.5rem; display:flex; gap:0.5rem; align-items:center;">
-    <input id="userKey" type="password" placeholder="(선택) 개인 Claude API 키 입력" />
-    <button id="saveKey">임시로 사용</button>
-  </div>
-  <div class="small">설명: 개인 키를 입력하면 해당 세션의 요청에만 키가 사용됩니다. 키는 서버에 저장되지 않습니다. 공개 네트워크에 키를 입력하는 것은 위험하니 주의하세요.</div>
-
   <footer>
-    프론트엔드는 GitHub Pages에서 제공됩니다. 서버 없이 동작하는 로컬 룰 기반 챗봇입니다. 더 풍부한 응답이 필요하면 백엔드를 배포하고 API 키를 설정하세요.
+    프론트엔드는 GitHub Pages에서 제공됩니다. 서버 없이 동작하는 로컬 룰 기반 챗봇입니다. 더 풍부한 답변이 필요하면 백엔드를 배포하고 API 키를 설정하세요.
   </footer>
 
   <script>
     const chatEl = document.getElementById('chat');
     const messageEl = document.getElementById('message');
     const sendBtn = document.getElementById('send');
-    const userKeyEl = document.getElementById('userKey');
-    const saveKeyBtn = document.getElementById('saveKey');
-
-    let tempKey = null; // 세션 동안만 사용 (현재 클라이언트 전용 모드에서는 사용 안 함)
 
     function appendMsg(text, cls) {
       const d = document.createElement('div');
@@ -54,36 +43,16 @@
       chatEl.scrollTop = chatEl.scrollHeight;
     }
 
-    saveKeyBtn.addEventListener('click', () => {
-      // 안내 차원만 남겨둠. 클라이언트 전용 모드에서는 API 키를 서버로 보내지 않습니다.
-      tempKey = userKeyEl.value.trim() || null;
-      if (tempKey) {
-        alert('개인 키가 세션에 설정되었습니다. 새로고침하면 제거됩니다. (현재 모드에서는 키가 사용되지 않습니다)');
-        userKeyEl.value = '';
-      } else {
-        alert('빈 키는 설정하지 않습니다.');
-      }
-    });
-
-    // 클라이언트 측 localResponder (서버 없이 동작)
     function localResponder(message) {
       const m = (message || '').toLowerCase();
-      if (m.includes('안녕') || m.includes('안녕하세요') || m.includes('hi') || m.includes('hello')) {
-        return '안녕하세요! Mini-Kaggle 기반 챗봇입니다. 데이터셋, 제출 방법, 평가 지표 등에 대해 물어보세요.';
-      }
-      if (m.includes('데이터셋') || m.includes('dataset') || m.includes('data')) {
-        return '이 Mini-Kaggle 과제의 데이터셋은 일반적으로 훈련/검증/테스트로 나뉘며 입력(features)과 정답(label)을 포함합니다. 구체적 파일/컬럼명이 필요하면 질문해 주세요.';
-      }
-      if (m.includes('제출') || m.includes('submit') || m.includes('submission')) {
-        return '제출은 보통 CSV 형식으로 예측값을 제출하는 방식이며, 일반적으로 id와 prediction 컬럼을 포함합니다.';
-      }
-      if (m.includes('평가') || m.includes('accuracy') || m.includes('auc') || m.includes('f1') || m.includes('f1-score')) {
-        return '평가는 문제 유형에 따라 다릅니다. 분류 문제는 Accuracy, F1-score, AUC 등을 사용하고, 회귀 문제는 RMSE, MAE 등을 사용합니다.';
-      }
-      if (m.includes('전처리') || m.includes('feature') || m.includes('전처리 방법')) {
-        return '전처리는 결측치 처리, 범주형 변수 인코딩, 정규화/표준화, 텍스트의 경우 토큰화/정제 등을 포함합니다.';
-      }
-      return "로컬 모드: 자세한 답변은 제한적입니다. 더 구체적인 질문(예: '데이터셋 파일 구조 알려줘')을 해주세요, 또는 운영자가 API 키를 설정하면 더 풍부한 응답을 얻을 수 있습니다.";
+
+      if (m.includes('안녕') || m.includes('안녕하세요')) return '안녕하세요! Mini-Kaggle 기반 챗봇입니다. 데이터셋/제출/평가/전처리 등에 대해 물어보세요.';
+      if (m.includes('데이터셋') || m.includes('dataset')) return '데이터셋은 보통 train/val/test로 나뉘며 feature와 label로 구성됩니다. 컬럼명을 알려주시면 구체 설명 가능합니다.';
+      if (m.includes('제출') || m.includes('submit')) return '제출은 일반적으로 id와 prediction 컬럼을 포함한 CSV 파일입니다.';
+      if (m.includes('평가') || m.includes('accuracy') || m.includes('f1')) return '분류: Accuracy/F1/AUC, 회귀: RMSE/MAE 등을 사용합니다.';
+      if (m.includes('전처리') || m.includes('feature')) return '결측치 처리, 범주형 인코딩, 정규화/표준화, 텍스트 토큰화 등을 권장합니다.';
+
+      return '로컬 모드: 더 구체적으로 질문하거나 운영자가 API 키를 설정하면 더 풍부한 답변을 얻을 수 있습니다.';
     }
 
     async function sendMessage() {
@@ -99,7 +68,6 @@
       chatEl.scrollTop = chatEl.scrollHeight;
 
       try {
-        // 서버 호출 대신 로컬 응답 사용
         const reply = localResponder(text);
         placeholder.textContent = reply;
       } catch (err) {
