@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini-Kaggle 기반 KANT Claude Chatbot</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width:900px; margin:2rem auto; }
+    #chat { border:1px solid #ddd; padding:1rem; height:60vh; overflow:auto; background:#fafafa; }
+    .msg { margin:0.5rem 0; padding:0.5rem; border-radius:6px; max-width:80%; }
+    .user { margin-left:auto; background:#e8f0ff; color:#0b66ff; text-align:right; }
+    .bot { margin-right:auto; background:#fff; color:#111; text-align:left; box-shadow:0 0 0 1px rgba(0,0,0,0.02); }
+    #inputRow { display:flex; gap:0.5rem; margin-top:1rem; }
+    input[type="text"] { flex:1; padding:0.6rem; font-size:1rem; border:1px solid #ccc; border-radius:6px; }
+    button { padding:0.6rem 1rem; border-radius:6px; border:none; background:#0b66ff; color:#fff; cursor:pointer; }
+    button:disabled { opacity:0.6; cursor:not-allowed; }
+    footer { margin-top:1rem; font-size:0.9rem; color:#666; }
+  </style>
+</head>
+<body>
+  <h1>KANT Claude Chatbot (Mini-Kaggle 기반)</h1>
+  <div id="chat" aria-live="polite"></div>
+
+  <div id="inputRow">
+    <input id="message" type="text" placeholder="질문을 입력하세요. 예: '데이터셋은 무엇을 포함하나요?'" />
+    <button id="send">전송</button>
+  </div>
+
+  <footer>
+    프론트엔드는 GitHub Pages에서 제공됩니다. 실제 Claude 호출은 백엔드로 프록시되어 비밀 키는 서버 환경변수에만 저장됩니다.
+  </footer>
+
+  <script>
+    const chatEl = document.getElementById('chat');
+    const messageEl = document.getElementById('message');
+    const sendBtn = document.getElementById('send');
+
+    function appendMsg(text, cls) {
+      const d = document.createElement('div');
+      d.className = 'msg ' + cls;
+      d.textContent = text;
+      chatEl.appendChild(d);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = messageEl.value.trim();
+      if (!text) return;
+      appendMsg(text, 'user');
+      messageEl.value = '';
+      sendBtn.disabled = true;
+      const placeholder = document.createElement('div');
+      placeholder.className = 'msg bot';
+      placeholder.textContent = '응답을 기다리는 중...';
+      chatEl.appendChild(placeholder);
+      chatEl.scrollTop = chatEl.scrollHeight;
+
+      try {
+        // 배포 후 이 값을 백엔드 URL로 바꿔주세요. 예: https://my-backend.onrender.com/api/chat
+        const BACKEND_URL = '/api/chat'; // 개발 시엔 프록시 또는 동일 도메인 사용
+        const res = await fetch(BACKEND_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText || '서버 에러');
+        }
+        const data = await res.json();
+        placeholder.textContent = data.reply ?? '(응답 없음)';
+      } catch (err) {
+        placeholder.textContent = '에러: ' + (err.message || err);
+      } finally {
+        sendBtn.disabled = false;
+        chatEl.scrollTop = chatEl.scrollHeight;
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+  </script>
+</body>
+</html>
