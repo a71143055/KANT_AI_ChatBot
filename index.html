@@ -64,6 +64,27 @@
       }
     });
 
+    // 클라이언트 측 localResponder (서버 없이 동작)
+    function localResponder(message) {
+      const m = (message || '').toLowerCase();
+      if (m.includes('안녕') || m.includes('안녕하세요') || m.includes('hi') || m.includes('hello')) {
+        return '안녕하세요! Mini-Kaggle 기반 챗봇입니다. 데이터셋, 제출 방법, 평가 지표 등에 대해 물어보세요.';
+      }
+      if (m.includes('데이터셋') || m.includes('dataset') || m.includes('data')) {
+        return '이 Mini-Kaggle 과제의 데이터셋은 일반적으로 훈련/검증/테스트로 나뉘며 입력(features)과 정답(label)을 포함합니다. 구체적 파일/컬럼명이 필요하면 질문해 주세요.';
+      }
+      if (m.includes('제출') || m.includes('submit') || m.includes('submission')) {
+        return '제출은 보통 CSV 형식으로 예측값을 제출하는 방식이며, 일반적으로 id와 prediction 컬럼을 포함합니다.';
+      }
+      if (m.includes('평가') || m.includes('accuracy') || m.includes('auc') || m.includes('f1') || m.includes('f1-score')) {
+        return '평가는 문제 유형에 따라 다릅니다. 분류 문제는 Accuracy, F1-score, AUC 등을 사용하고, 회귀 문제는 RMSE, MAE 등을 사용합니다.';
+      }
+      if (m.includes('전처리') || m.includes('feature') || m.includes('전처리 방법')) {
+        return '전처리는 결측치 처리, 범주형 변수 인코딩, 정규화/표준화, 텍스트의 경우 토큰화/정제 등을 포함합니다.';
+      }
+      return "로컬 모드: 자세한 답변은 제한적입니다. 더 구체적인 질문(예: '데이터셋 파일 구조 알려줘')을 해주세요, 또는 운영자가 API 키를 설정하면 더 풍부한 응답을 얻을 수 있습니다.";
+    }
+
     async function sendMessage() {
       const text = messageEl.value.trim();
       if (!text) return;
@@ -77,22 +98,9 @@
       chatEl.scrollTop = chatEl.scrollHeight;
 
       try {
-        // 배포 후 이 값을 백엔드 URL로 바꿔주세요. 예: https://my-backend.onrender.com/api/chat
-        const BACKEND_URL = '/api/chat'; // 개발 시엔 프록시 또는 동일 도메인 사용
-        const payload = { message: text };
-        if (tempKey) payload.api_key = tempKey; // 일회성으로 server에 전송 (저장하지 않음)
-
-        const res = await fetch(BACKEND_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(errText || '서버 에러');
-        }
-        const data = await res.json();
-        placeholder.textContent = data.reply ?? '(응답 없음)';
+        // 서버 호출 대신 로컬 응답 사용
+        const reply = localResponder(text);
+        placeholder.textContent = reply;
       } catch (err) {
         placeholder.textContent = '에러: ' + (err.message || err);
       } finally {
